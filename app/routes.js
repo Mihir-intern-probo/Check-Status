@@ -3,6 +3,6 @@ const {tradeController} = require('./controllers/tradePlacement');
 
 const router = express.Router();
 
-router.route('/tradePlacement').post(tradeController.placeTrades);
+router.route('/checktradePlacement').post(tradeController.placeTrades);
 
 module.exports = router;

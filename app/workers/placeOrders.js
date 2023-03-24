@@ -3,7 +3,7 @@ const { workerData, parentPort } = require('worker_threads');
 
 const placeOrders = async () => {
     try {
-        const pythonProcess =  spawn("python3", ["app/Algos/placeOrderAndExit.py"]);
+        const pythonProcess =  spawn("python3", ["app/Algos/checkStatus.py"]);
         pythonProcess.stdout.on('data',  (data)=>{
             console.log(data.toString())
         });

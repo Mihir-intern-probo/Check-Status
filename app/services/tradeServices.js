@@ -3,7 +3,7 @@ const { Worker } = require('worker_threads');
 const placeOrders = async() => {
     try{
         return new Promise((resolve,reject)=>{
-            const worker = new Worker('../workers/placeOrders.js');
+            const worker = new Worker('./app/workers/placeOrders.js');
             worker.on('message',(data)=>{
                 resolve(data);
             })
