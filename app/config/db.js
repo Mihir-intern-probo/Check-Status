@@ -3,8 +3,8 @@ const {Sequelize} = require('sequelize');
 dotenv.config();
 
 try{
-      const sequelize = new Sequelize(`${process.env.DATABASE_NAME}`, `admin`, `${process.env.SQL_PASSWORD}`, {
-            host: `${process.env.HOST}`,
+      const sequelize = new Sequelize(`btc_history`, `admin`, `master11`, {
+            host: `likush-db1.cm6r8mlpzeac.ap-south-1.rds.amazonaws.com`,
             dialect: `mysql`,
             pool:{
                   max: 100,

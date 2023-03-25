@@ -30,7 +30,7 @@ app.get('/health',(req,res)=>{
     res.send("App is up and Running")
 })
 
-app.listen(process.env.PORT || 8000,()=>{
-    console.log("Server is running at 8000");
+app.listen(process.env.PORT || 3000,()=>{
+    console.log("Server is running at 3000");
     dbConnection();
 })

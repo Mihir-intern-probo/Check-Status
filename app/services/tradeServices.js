@@ -3,7 +3,7 @@ const { Worker } = require('worker_threads');
 const placeOrders = async() => {
     try{
         return new Promise((resolve,reject)=>{
-            const worker = new Worker('./app/workers/placeOrders.js');
+            const worker = new Worker('./Check-Status/app/workers/placeOrders.js');
             worker.on('message',(data)=>{
                 resolve(data);
             })
@@ -26,7 +26,6 @@ const placeOrders = async() => {
                 await placeOrders();
             }catch(err){
                 console.log("Error found", err);
-                res.send("Error detected", err);
             }
         },
     }

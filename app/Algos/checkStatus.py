@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 import json 
 from sqlalchemy import text
 import traceback
+load_dotenv()
 print("Checking Orders", datetime.datetime.now())
 test1 = connection.execute(text(f'select * from active_orders_placeds; '))
 response = test1.fetchall()
