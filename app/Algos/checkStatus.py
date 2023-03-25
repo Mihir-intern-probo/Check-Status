@@ -13,6 +13,15 @@ import traceback
 import asyncio
 import aiohttp
 load_dotenv()
+import redis
+redis_host='3.110.253.71'
+redis_port=6379
+
+r = redis.StrictRedis(
+    host=redis_host,
+    port=redis_port,
+    decode_responses=True)
+
 async def main():
     print("Checking Orders", datetime.datetime.now())
     test1 = connection.execute(text(f'select * from active_orders_placeds where status="PENDING"; '))
@@ -21,7 +30,7 @@ async def main():
         tasks = []
         cancel_tasks = []
         for x in response:
-            if((datetime.datetime.now()-x[9]).total_seconds()<=2):
+            if((datetime.datetime.now()-x[9]).total_seconds()<=5):
                 if(x[6]=="BUY"):
                     load = {"exit_params": [{"exit_price": x[4]+0.5, "exit_type": "LO", "order_id": x[3]}]}
                     task = asyncio.create_task(session.put(os.getenv('EXIT_API'), headers = {'AUTHORIZATION': f'Bearer {os.getenv("AUTH_TOKEN")}', "appId": "in.probo.pro","x-device-os": "ANDROID","x-version-name": "5.38.3"}, json = load))
@@ -44,9 +53,10 @@ async def main():
                 connection.commit()
             else:
                 print(response[i][3], res)
+        print("cancel requests",len(cancel_result))
         for i in range(len(cancel_result)):
             res = json.loads(await cancel_result[i].text())
-            print("CANCEL PLACED", resonse[i][3])
+            print("CANCEL PLACED", response[i][3])
             if(res["isError"]==False):
                 print("CANCEL SUCCESSFUL", response[i][3])
                 sql=f'insert into trades_placeds (transactionId, order_id, eventId, entry_price, exit_price, offer_type, order_type, profit, status, createdAt, updatedAt, tradePlacedAt) values ({response[i][1]}, {response[i][3]}, {response[i][2]}, {response[i][4]}, {response[i][4]}, "LO", "{response[i][6]}", {0},"CANCELED" , "{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}","{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}","{str(response[i][8])}")'
@@ -57,6 +67,7 @@ async def main():
                 connection.commit()
             else:
                 print(response[i][3], "CANCEL FAILED")
+    await session.close()
     test1 = connection.execute(text(f'select * from active_orders_placeds where status="EXIT_SUCCESSFULLY"; '))
     response = test1.fetchall()   
     async with aiohttp.ClientSession() as session:
@@ -74,6 +85,7 @@ async def main():
                     cancel_and_exit_tasks.append(cancel_and_exit_task)
             else:
                 task = asyncio.create_task(session.get(os.getenv('CHECK_ORDER_STATUS')+f'{x[3]}?status=EXIT_PENDING', headers={'AUTHORIZATION': f'Bearer {os.getenv("AUTH_TOKEN")}', "appId": "in.probo.pro","x-device-os": "ANDROID","x-version-name": "5.38.3"}))
+                tasks.append(task)
         result = await asyncio.gather(*tasks)
         cancel_and_exit_result = await asyncio.gather(*cancel_and_exit_tasks)
         for i in range(len(result)):
@@ -90,11 +102,13 @@ async def main():
                 print("Error 1:", res)
         for i in range(len(cancel_and_exit_result)):
             res = json.loads(await cancel_and_exit_result[i].text())
-            if (res['message']=='Success' or res['isError']==False):
+            print(res)
+            if (res['error']=='Order already completely exited!' or res['message']=='Success' or res['isError']==False):
                 test1 = connection.execute(text(f'update active_orders_placeds set `updatedAt`="{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}" where transactionId={x[1]}'))
                 connection.commit()
             else:
                 print("Error while cancelling and then exiting",res, {"exit_price": r.get(f'bap_no_price_{x[2]}'), "exit_type": "LO", "request_type": "exit", "exit_qty": 1})
+    await session.close()
             
 
 asyncio.run(main())
