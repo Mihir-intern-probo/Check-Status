@@ -36,7 +36,7 @@ async def main():
         result = await asyncio.gather(*tasks)
         cancel_result = await asyncio.gather(*cancel_tasks)
         for i in range(len(result)):
-            res = json.loads(result[i].content)
+            res = json.loads(await result[i].text())
             print("EXIT PLACED", response[i][3])
             if(res['isError']==False):
                 sql = f'update active_orders_placeds set `status` = "EXIT_PLACED", `updatedAt`= "{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}" where transactionId={response[i][1]}'
@@ -45,11 +45,11 @@ async def main():
             else:
                 print(response[i][3], res)
         for i in range(len(cancel_result)):
-            res = json.loads(cancel_result[i].content)
+            res = json.loads(await cancel_result[i].text())
             print("CANCEL PLACED", resonse[i][3])
             if(res["isError"]==False):
                 print("CANCEL SUCCESSFUL", response[i][3])
-                sql=f'insert into trades_placeds (transactionId, order_id, eventId, entry_price, exit_price, offer_type, order_type, profit, status, createdAt, updatedAt, tradePlacedAt) values ({response[i][1]}, {response[i][3]}, {response[i][2]}, {response[i][4]}, {response[i][4]}, "LO", {response[i][6]}, {0},"CANCELED" , "{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}","{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}","{str(response[i][8])}")'
+                sql=f'insert into trades_placeds (transactionId, order_id, eventId, entry_price, exit_price, offer_type, order_type, profit, status, createdAt, updatedAt, tradePlacedAt) values ({response[i][1]}, {response[i][3]}, {response[i][2]}, {response[i][4]}, {response[i][4]}, "LO", "{response[i][6]}", {0},"CANCELED" , "{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}","{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}","{str(response[i][8])}")'
                 test1 = connection.execute(text(sql))
                 connection.commit()
                 sql = f'delete from active_orders_placeds where transactionId={response[i][1]}'
@@ -77,7 +77,7 @@ async def main():
         result = await asyncio.gather(*tasks)
         cancel_and_exit_result = await asyncio.gather(*cancel_and_exit_tasks)
         for i in range(len(result)):
-            res = json.loads(result[i].content)        
+            res = json.loads(await result[i].text())        
             if(len(res['data']['orderDisplayArray'])==2):
                 print("EXIT SUCCESSFULLY", response[i][3])
                 sql=f'insert into trades_placeds(transactionId, order_id, eventId, entry_price, exit_price, offer_type, order_type, profit, status, createdAt, updatedAt, tradePlacedAt) values ({response[i][1]}, {response[i][3]}, {response[i][2]}, {response[i][4]}, {res["data"]["order_details"]["exit_price"]}, "LO", "{response[i][6]}", {res["data"]["order_details"]["exit_price"]-response[i][4]}, "EXIT SUCCESSFUL", "{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}","{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}","{str(response[i][8])}")'
@@ -89,7 +89,7 @@ async def main():
             else:
                 print("Error 1:", res)
         for i in range(len(cancel_and_exit_result)):
-            res = json.loads(cancel_and_exit_result[i].content)
+            res = json.loads(await cancel_and_exit_result[i].text())
             if (res['message']=='Success' or res['isError']==False):
                 test1 = connection.execute(text(f'update active_orders_placeds set `updatedAt`="{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}" where transactionId={x[1]}'))
                 connection.commit()
