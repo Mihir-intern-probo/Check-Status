@@ -21,7 +21,7 @@ async def main():
         tasks = []
         cancel_tasks = []
         for x in response:
-            if((datetime.datetime.now()-x[9]).total_seconds<=2):
+            if((datetime.datetime.now()-x[9]).total_seconds()<=2):
                 if(x[6]=="BUY"):
                     load = {"exit_params": [{"exit_price": x[4]+0.5, "exit_type": "LO", "order_id": x[3]}]}
                     task = asyncio.create_task(session.put(os.getenv('EXIT_API'), headers = {'AUTHORIZATION': f'Bearer {os.getenv("AUTH_TOKEN")}', "appId": "in.probo.pro","x-device-os": "ANDROID","x-version-name": "5.38.3"}, json = load))
