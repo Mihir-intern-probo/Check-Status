@@ -58,6 +58,28 @@ for x in response:
                 print("Cancel Failed", res)
     else:
         if(x[7]=='EXIT_SUCCESSFULLY'):
+            if((datetime.datetime.now()-x[9]).total_seconds()>=5):
+                if(x[6]=="BUY"):
+                    load = {"exit_price": float(r.get(f'bap_yes_price_{x[2]}')), "exit_type": "LO", "request_type": "exit", "exit_qty": 1}
+                    res = requests.put(os.getenv('CANCEL_AND_EXIT_API')+f'{x[3]}',json=load, headers={'AUTHORIZATION': f'Bearer {os.getenv("AUTH_TOKEN")}', "appId": "in.probo.pro","x-device-os": "ANDROID","x-version-name": "5.38.3"})
+                    print(res, load)
+                    res=json.loads(res.content)
+                    print(res)
+                    if(res['message']=="Success" or res['isError']==False):
+                        test1 = connection.execute(text(f'update active_orders_placeds set `updatedAt`="{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}" where transactionId={x[1]}'))
+                        connection.commit()
+                    else:
+                        print("Error while cancelling and then exiting", {"exit_price": r.get(f'bap_yes_price_{x[2]}'), "exit_type": "LO", "request_type": "exit", "exit_qty": 1})
+                else:
+                    load = {"exit_price": float(r.get(f'bap_no_price_{x[2]}')), "exit_type": "LO", "request_type": "exit", "exit_qty": 1}
+                    res = requests.put(os.getenv('CANCEL_AND_EXIT_API')+f'{x[3]}',json=load, headers={'AUTHORIZATION': f'Bearer {os.getenv("AUTH_TOKEN")}', "appId": "in.probo.pro","x-device-os": "ANDROID","x-version-name": "5.38.3"})
+                    print(res, load)
+                    res=json.loads(res.content)
+                    if (res['message']=='Success' or res['isError']==False):
+                        test1 = connection.execute(text(f'update active_orders_placeds set `updatedAt`="{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}" where transactionId={x[1]}'))
+                        connection.commit()
+                    else:
+                        print("Error while cancelling and then exiting",res, {"exit_price": r.get(f'bap_no_price_{x[2]}'), "exit_type": "LO", "request_type": "exit", "exit_qty": 1})
             res = requests.get(os.getenv('CHECK_ORDER_STATUS')+f'{x[3]}?status=EXIT_PENDING', headers={'AUTHORIZATION': f'Bearer {os.getenv("AUTH_TOKEN")}', "appId": "in.probo.pro","x-device-os": "ANDROID","x-version-name": "5.38.3"})
             res=json.loads(res.content)
             print("EXIT PLACED CHECKED",x[3])
