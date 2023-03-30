@@ -1,8 +1,8 @@
 const express = require("express");
-const {tradeController} = require('./controllers/tradePlacement');
+const {checkController} = require('./controllers/checkPlacement.js');
 
 const router = express.Router();
 
-router.route('/checktradePlacement').post(tradeController.placeTrades);
+router.route('/checktradePlacement').post(checkController.checkTrades);
 
 module.exports = router;
