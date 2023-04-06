@@ -167,8 +167,8 @@ dotenv.config();
         statisticalCheckPlacementPaper: async () => {
             try{
                 let responses = placingOrdersTestingProvider.get("PENDING");
-                let bapYes = await client.get(`bap_yes_price_${response.eventId}`);
                 responses.map(async (response) => {
+                    let bapYes = await client.get(`bap_yes_price_${response.eventId}`);
                     const timeDiff = Math.abs(formatDate.getTime() - response.updatedAt.getTime());
                     if(Math.floor((timeDiff / 1000) % 60) >= 2) {
                         placingOrdersTestingProvider.deleteActive(response.transactionId);
