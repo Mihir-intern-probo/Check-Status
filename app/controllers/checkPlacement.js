@@ -11,6 +11,15 @@ const checkController={
         }catch(err){
             res.status(404).json({status: "error", error: `${err}`})
         }
+    },
+    checkTradesPaper: async(req,res) => {
+        try{
+            const info = checkServices.statisticalCheckPlacementPaper();
+            console.log("Started Checking Orders");
+            res.status(200).json({status: "Working", response: `${info}`})
+        }catch(err){
+            res.status(404).json({status: "error", error: `${err}`});
+        }
     }
 }
 
