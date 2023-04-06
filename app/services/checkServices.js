@@ -5,7 +5,7 @@ const axios = require('axios');
 const dotenv = require('dotenv');
 const formatDate = require('../utils/date');
 const {client} = require('../utils/redis')
-const tradePlacedTestingProvider = require('../dataprovider/tradePlacementTesting');
+const {tradePlacedTestingProvider} = require('../dataprovider/tradePlacementTesting');
 
 dotenv.config();
     const checkServices = {
