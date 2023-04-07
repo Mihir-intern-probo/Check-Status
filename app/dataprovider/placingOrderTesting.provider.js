@@ -1,8 +1,8 @@
 const { placeTradesForTesting } = require('../models/placeOrderTesting');
 const date = require('../utils/date');
 const placingOrdersTestingProvider = {
-    updateActive: async (id, status) => {
-        await placeTradesForTesting.update({status, updatedAt: date},{
+    updateActive: async (id,exit_price, status) => {
+        await placeTradesForTesting.update({status, exit_price, updatedAt: date},{
             where: {
                 transactionId: id
             }

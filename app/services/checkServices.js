@@ -186,14 +186,14 @@ dotenv.config();
                         if(response.order_type === 'BUY') {
                             const lc_yes = await client.get(`lc_yes_${response.eventId}`); 
                             if(float(bapYes) === response.entry_price-1 || float(bapYes) === float(lc_yes)) {
-                                placingOrdersTestingProvider.updateActive(response.transactionId, "EXIT PENDING");
+                                placingOrdersTestingProvider.updateActive(response.transactionId, bapYes, "EXIT PENDING");
                                 }
                         }else {
                             const lc_no = await client.get(`lc_no_${response.eventId}`); 
                             const end_time = await client.get(`end_time_${response.endId}`);
                             const timeDiff = Math.abs(end_time.getTime() - formatDate.getTime());
                             if(float(bapNo) === response.entry_price-1 || float(bapNo) === lc_no) {
-                                placingOrdersTestingProvider.updateActive(response.transactionId, "EXIT PENDING");
+                                placingOrdersTestingProvider.updateActive(response.transactionId, bapNo,"EXIT PENDING");
                             }
                         } 
                     } else {
@@ -202,19 +202,19 @@ dotenv.config();
                             const end_time = await client.get(`end_time_${response.endId}`);
                             const timeDiff = Math.abs(end_time.getTime() - formatDate.getTime());
                             if(float(bapYes) === response.entry_price-1 || float(bapYes) === lc_yes) {
-                                placingOrdersTestingProvider.updateActive(response.transactionId, "EXIT PENDING");
+                                placingOrdersTestingProvider.updateActive(response.transactionId, bapYes, "EXIT PENDING");
                             }
                         } else {
                             const lc_no = await client.get(`lc_no_${response.eventId}`); 
                             const end_time = await client.get(`end_time_${response.endId}`);
                             const timeDiff = Math.abs(end_time.getTime() - formatDate.getTime());
                             if(float(bapNo) === response.entry_price-1 || float(bapNo) === lc_no) {
-                                placingOrdersTestingProvider.updateActive(response.transactionId, "EXIT PENDING");
+                                placingOrdersTestingProvider.updateActive(response.transactionId, bapNo, "EXIT PENDING");
                             }
                         }
                     }
                 })
-                setTimeout(checkServices.statisticalCheckPlacement(), 1000)
+                setTimeout(checkServices.statisticalCheckPlacementPaper(), 1000)
             }catch(err){
                 console.log("Error found", err);
             }
