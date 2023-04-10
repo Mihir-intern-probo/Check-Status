@@ -1,3 +1,7 @@
+function padTo2Digits(num) {
+    return num.toString().padStart(2, '0');
+  }
+
 const formatDate = () => {
     const date = new Date;
     return (

@@ -11,7 +11,7 @@ dotenv.config();
     const checkServices = {
         statisticalCheckPlacement: async()=>{
             try{
-                let responses = placingOrdersProvider.get("PENDING");
+                let responses =await placingOrdersProvider.get("PENDING");
                 responses.map(async (response) => {
                     const timeDiff = Math.abs(formatDate.getTime() - response.updatedAt.getTime());
                     if(Math.floor((timeDiff / 1000) % 60) >= 2) {
@@ -30,7 +30,7 @@ dotenv.config();
                         })
                     }  
                 })
-                responses = placingOrdersProvider.get("EXIT PENDING");
+                responses = await placingOrdersProvider.get("EXIT PENDING");
                 responses.map(async(response) => {
                     const bapYes = await client.get(`bap_yes_price_${response.eventId}`);
                     const bapNo = await client.get(`bap_no_price_${response.eventId}`);
@@ -166,33 +166,34 @@ dotenv.config();
         },
         statisticalCheckPlacementPaper: async () => {
             try{
-                let responses = placingOrdersTestingProvider.get("PENDING");
+		console.log(formatDate())
+                let responses = await placingOrdersTestingProvider.get("PENDING");
                 responses.map(async (response) => {
                     let bapYes = await client.get(`bap_yes_price_${response.eventId}`);
-                    const timeDiff = Math.abs(formatDate.getTime() - response.updatedAt.getTime());
+                    const timeDiff = Math.abs(formatDate() - response.updatedAt.getTime());
                     if(Math.floor((timeDiff / 1000) % 60) >= 2) {
                         placingOrdersTestingProvider.deleteActive(response.transactionId);
                         tradePlacedTestingProvider.create(response.order_type, response.transactionId, response.eventId, bapYes, 
                             bapYes, 0, response.createdAt, response.trigger_value, "CANCELLED", 
                             formatDate, formatDate);
                         }})
-                responses = placingOrdersTestingProvider.get("EXIT PENDING");
+                responses = await placingOrdersTestingProvider.get("EXIT PENDING");
                 responses.map(async(response) => {
                     bapYes = await client.get(`bap_yes_price_${response.eventId}`);
                     const bapNo = await client.get(`bap_no_price_${response.eventId}`);
                     const end_time = await client.get(`end_time_${response.endId}`);
-                    const timeDiff = Math.abs(end_time.getTime() - formatDate.getTime());
+                    const timeDiff = Math.abs(end_time - formatDate());
                     if(timeDiff>300) {
                         if(response.order_type === 'BUY') {
                             const lc_yes = await client.get(`lc_yes_${response.eventId}`); 
-                            if(float(bapYes) === response.entry_price-1 || float(bapYes) === float(lc_yes)) {
+                            if(parseFloat(bapYes) === response.entry_price-1 || parseFloat(bapYes) === parseFloat(lc_yes)) {
                                 placingOrdersTestingProvider.updateActive(response.transactionId, bapYes, "EXIT PENDING");
                                 }
                         }else {
                             const lc_no = await client.get(`lc_no_${response.eventId}`); 
                             const end_time = await client.get(`end_time_${response.endId}`);
-                            const timeDiff = Math.abs(end_time.getTime() - formatDate.getTime());
-                            if(float(bapNo) === response.entry_price-1 || float(bapNo) === lc_no) {
+                            const timeDiff = Math.abs(end_time - formatDate());
+                            if(parseFloat(bapNo) === response.entry_price-1 || parseFloat(bapNo) === lc_no) {
                                 placingOrdersTestingProvider.updateActive(response.transactionId, bapNo,"EXIT PENDING");
                             }
                         } 
@@ -200,21 +201,21 @@ dotenv.config();
                         if(response.order_type === 'BUY') {
                             const lc_yes = await client.get(`lc_yes_${response.eventId}`); 
                             const end_time = await client.get(`end_time_${response.endId}`);
-                            const timeDiff = Math.abs(end_time.getTime() - formatDate.getTime());
-                            if(float(bapYes) === response.entry_price-1 || float(bapYes) === lc_yes) {
+                            const timeDiff = Math.abs(end_time - formatDate());
+                            if(parseFloat(bapYes) === response.entry_price-1 || parseFloat(bapYes) === lc_yes) {
                                 placingOrdersTestingProvider.updateActive(response.transactionId, bapYes, "EXIT PENDING");
                             }
                         } else {
                             const lc_no = await client.get(`lc_no_${response.eventId}`); 
                             const end_time = await client.get(`end_time_${response.endId}`);
-                            const timeDiff = Math.abs(end_time.getTime() - formatDate.getTime());
-                            if(float(bapNo) === response.entry_price-1 || float(bapNo) === lc_no) {
+                            const timeDiff = Math.abs(end_time - formatDate());
+                            if(parseFloat(bapNo) === response.entry_price-1 || parseFloat(bapNo) === lc_no) {
                                 placingOrdersTestingProvider.updateActive(response.transactionId, bapNo, "EXIT PENDING");
                             }
                         }
                     }
                 })
-                setTimeout(checkServices.statisticalCheckPlacementPaper(), 1000)
+                setTimeout(checkServices.statisticalCheckPlacementPaper, 1000)
             }catch(err){
                 console.log("Error found", err);
             }
