@@ -1,5 +1,5 @@
 const API_USED = {
-	AUTH_TOKEN: "3RRgMaMf0sPqeVprOQJuORxP/qfMl7dluL0VTj1dcs8=",
+	AUTH_TOKEN: "liCAXgX6GYj8+eUNZMopUtCTewvl2HhBJt3C3ZZHXzo=",
 	SOCKET: "wss://falcon.api.probo.in",
 	EXIT_API: "https://prod.api.probo.in/api/v2/oms/order/exit",
 	CANCEL_API: "https://prod.api.probo.in/api/v1/oms/order/cancel/",
