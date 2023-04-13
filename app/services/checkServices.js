@@ -24,7 +24,31 @@ const moment = require('moment');
 			}
                         axios.put(API_USED.CANCEL_API + `${response.orderId}?eventId=${response.eventId}`, {}, {headers})
 			.then((res) => {
-				console.log(res.data);
+			    console.log(res.data);
+			    if(res.data.data.message === 'Exit Order Cancelled') {
+				const headers1 = {
+                        	    'AUTHORIZATION': `Bearer ${CONSTANTS.API_USED.AUTH_TOKEN}`,
+                        	    "appId": "in.probo.pro",
+                        	    "x-device-os": "ANDROID",
+                        	    "x-version-name": "5.38.3"
+                    		}
+				const data = {
+                            		"exit_params": [
+                                	{
+                                            "exit_price": data1.l1_avg_matched_price+0.5,
+                                            "exit_type": "LO",
+                                            "order_id": data1.orderId
+                                	}
+                            	    ]
+                                };
+				axios.put(CONSTANTS.API_USED.EXIT_API, data, {headers1})
+				.then((res) => {
+				    console.log("Exited again", res.data);
+				    placingOrdersProvider.updateActive(data1.orderId, "EXIT PENDING");
+				}).catch((err) => {
+				    console.log(err);
+				})
+			    }
                             if(res.data.isError === false) {
                                 placingOrdersProvider.deleteActive(response.orderId);
                                 tradePlacedProvider.create(response.transactionId, response.orderId, 
@@ -47,7 +71,7 @@ const moment = require('moment');
                     if(timeDiff/1000>300) {
                         if(response.order_type === 'BUY') {
                             const lc_yes = await client.get(`lc_yes_${response.eventId}`); 
-                            if(parseFloat(bapYes) <= response.entry_price-1 || parseFloat(bapYes) === parseFloat(lc_yes)) {
+                            if(parseFloat(bapYes) <= response.entry_price-2 || parseFloat(bapYes) === parseFloat(lc_yes)) {
                                 headers={
                                     'AUTHORIZATION': `Bearer ${API_USED.AUTH_TOKEN}`,
                                      "appId": "in.probo.pro",
@@ -75,7 +99,7 @@ const moment = require('moment');
                             }
                         } else {
                             const lc_no = await client.get(`lc_no_${response.eventId}`);
-                            if(parseFloat(bapNo) <= response.entry_price-1 || parseFloat(bapNo) === parseFloat(lc_no)) {
+                            if(parseFloat(bapNo) <= response.entry_price-2 || parseFloat(bapNo) === parseFloat(lc_no)) {
                                 headers={
                                     'AUTHORIZATION': `Bearer ${API_USED.AUTH_TOKEN}`,
                                      "appId": "in.probo.pro",
@@ -106,7 +130,7 @@ const moment = require('moment');
                     } else {
                         if(response.order_type === 'BUY') {
                             const lc_yes = await client.get(`lc_yes_${response.eventId}`); 
-                            if(parseFloat(bapYes) <= response.entry_price-1 || parseFloat(bapYes) === parseFloat(lc_yes)) {
+                            if(parseFloat(bapYes) <= response.entry_price-2 || parseFloat(bapYes) === parseFloat(lc_yes)) {
                                 headers={
                                     'AUTHORIZATION': `Bearer ${API_USED.AUTH_TOKEN}`,
                                      "appId": "in.probo.pro",
@@ -135,7 +159,7 @@ const moment = require('moment');
                             }
                         } else {
                             const lc_no = await client.get(`lc_no_${response.eventId}`); 
-                            if(parseFloat(bapNo) <= response.entry_price-1 || parseFloat(bapNo) === parseFloat(lc_no)) {
+                            if(parseFloat(bapNo) <= response.entry_price-2 || parseFloat(bapNo) === parseFloat(lc_no)) {
                                 headers={
                                     'AUTHORIZATION': `Bearer ${API_USED.AUTH_TOKEN}`,
                                      "appId": "in.probo.pro",
