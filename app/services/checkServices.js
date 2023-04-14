@@ -18,16 +18,16 @@ const moment = require('moment');
                 responses.map(async (response) => {
                     const timeDiff = Math.abs(Date.parse(formatDate()) - response.updatedAt.getTime());
 		    console.log((timeDiff/1000));
-                    if(Math.floor((timeDiff / 1000) >= 2)){
-			const headers = {
+                    if(Math.floor((timeDiff / 1000) >= 3)){
+			let headers = {
 				'AUTHORIZATION': `Bearer ${API_USED.AUTH_TOKEN}`
 			}
                         axios.put(API_USED.CANCEL_API + `${response.orderId}?eventId=${response.eventId}`, {}, {headers})
 			.then((res) => {
 			    console.log(res.data);
 			    if(res.data.data.message === 'Exit Order Cancelled') {
-				const headers1 = {
-                        	    'AUTHORIZATION': `Bearer ${CONSTANTS.API_USED.AUTH_TOKEN}`,
+				headers = {
+                        	    'AUTHORIZATION': `Bearer ${API_USED.AUTH_TOKEN}`,
                         	    "appId": "in.probo.pro",
                         	    "x-device-os": "ANDROID",
                         	    "x-version-name": "5.38.3"
@@ -35,21 +35,21 @@ const moment = require('moment');
 				const data = {
                             		"exit_params": [
                                 	{
-                                            "exit_price": data1.l1_avg_matched_price+0.5,
+                                            "exit_price": response.entry_price+0.5,
                                             "exit_type": "LO",
-                                            "order_id": data1.orderId
+                                            "order_id": response.orderId
                                 	}
                             	    ]
                                 };
-				axios.put(CONSTANTS.API_USED.EXIT_API, data, {headers1})
-				.then((res) => {
+				axios.put(API_USED.EXIT_API, data, {headers})
+				.then(async(res) => {
 				    console.log("Exited again", res.data);
-				    placingOrdersProvider.updateActive(data1.orderId, "EXIT PENDING");
+				    await placingOrdersProvider.updateActive(response.orderId, "EXIT PENDING");
 				}).catch((err) => {
 				    console.log(err);
 				})
 			    }
-                            if(res.data.isError === false) {
+			else if(res.data.isError === false) {
                                 placingOrdersProvider.deleteActive(response.orderId);
                                 tradePlacedProvider.create(response.transactionId, response.orderId, 
                                     response.eventId, response.entry_price, response.entry_price, response.offer_type, response.order_type,
@@ -71,7 +71,7 @@ const moment = require('moment');
                     if(timeDiff/1000>300) {
                         if(response.order_type === 'BUY') {
                             const lc_yes = await client.get(`lc_yes_${response.eventId}`); 
-                            if(parseFloat(bapYes) <= response.entry_price-2 || parseFloat(bapYes) === parseFloat(lc_yes)) {
+                            if(parseFloat(bapYes) <= response.entry_price-API_USED.STOP_LOSS || parseFloat(bapYes) === parseFloat(lc_yes)) {
                                 headers={
                                     'AUTHORIZATION': `Bearer ${API_USED.AUTH_TOKEN}`,
                                      "appId": "in.probo.pro",
@@ -99,7 +99,7 @@ const moment = require('moment');
                             }
                         } else {
                             const lc_no = await client.get(`lc_no_${response.eventId}`);
-                            if(parseFloat(bapNo) <= response.entry_price-2 || parseFloat(bapNo) === parseFloat(lc_no)) {
+                            if(parseFloat(bapNo) <= response.entry_price-API_USED.STOP_LOSS || parseFloat(bapNo) === parseFloat(lc_no)) {
                                 headers={
                                     'AUTHORIZATION': `Bearer ${API_USED.AUTH_TOKEN}`,
                                      "appId": "in.probo.pro",
@@ -130,7 +130,6 @@ const moment = require('moment');
                     } else {
                         if(response.order_type === 'BUY') {
                             const lc_yes = await client.get(`lc_yes_${response.eventId}`); 
-                            if(parseFloat(bapYes) <= response.entry_price-2 || parseFloat(bapYes) === parseFloat(lc_yes)) {
                                 headers={
                                     'AUTHORIZATION': `Bearer ${API_USED.AUTH_TOKEN}`,
                                      "appId": "in.probo.pro",
@@ -156,10 +155,8 @@ const moment = require('moment');
                                 .catch((err) => {
                                     console.log(err);
                                 })
-                            }
                         } else {
                             const lc_no = await client.get(`lc_no_${response.eventId}`); 
-                            if(parseFloat(bapNo) <= response.entry_price-2 || parseFloat(bapNo) === parseFloat(lc_no)) {
                                 headers={
                                     'AUTHORIZATION': `Bearer ${API_USED.AUTH_TOKEN}`,
                                      "appId": "in.probo.pro",
@@ -185,7 +182,6 @@ const moment = require('moment');
                                 .catch((err) => {
                                     console.log(err);
                                 })
-                            }
                         }
                     }
                 })
