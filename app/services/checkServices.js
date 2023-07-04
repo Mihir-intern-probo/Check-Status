@@ -18,14 +18,14 @@ const moment = require('moment');
                 responses.map(async (response) => {
                     const timeDiff = Math.abs(Date.parse(formatDate()) - response.updatedAt.getTime());
 		    console.log((timeDiff/1000));
-                    if(Math.floor((timeDiff / 1000) >= 3)){
+                    if(Math.floor((timeDiff / 1000) >= 2)){
 			let headers = {
 				'AUTHORIZATION': `Bearer ${API_USED.AUTH_TOKEN}`
 			}
                         axios.put(API_USED.CANCEL_API + `${response.orderId}?eventId=${response.eventId}`, {}, {headers})
 			.then((res) => {
 			    console.log(res.data);
-			    if(res.data.data.message === 'Exit Order Cancelled') {
+			    if(res.data.data.presentation.title === 'Exit Order Cancelled') {
 				headers = {
                         	    'AUTHORIZATION': `Bearer ${API_USED.AUTH_TOKEN}`,
                         	    "appId": "in.probo.pro",
@@ -46,6 +46,14 @@ const moment = require('moment');
 				    console.log("Exited again", res.data);
 				    await placingOrdersProvider.updateActive(response.orderId, "EXIT PENDING");
 				}).catch((err) => {
+					console.log("Error while exiting again!", err);
+					axios.put(API_USED.EXIT_API, data, {headers})
+					.then(async(res) => {
+					    console.log("Exited again", res.data);
+					await placingOrdersProvider.updateActive(response.orderId, "EXIT PENDING");
+					}).catch((err) => {
+					    console.log("Error while exiting again", err);
+					})
 				    console.log(err);
 				})
 			    }
@@ -58,7 +66,7 @@ const moment = require('moment');
                                 console.log("Error while cancelling order !!!");
                             }
                         }).catch((err) => {
-                            console.log(err);
+                            console.log("Error while canceling and exiting orders!!",err);
                         })
                     }  
                 })
@@ -67,11 +75,12 @@ const moment = require('moment');
                     const bapYes = await client.get(`bap_yes_price_${response.eventId}`);
                     const bapNo = await client.get(`bap_no_price_${response.eventId}`);
                     const end_time = await client.get(`end_time_${response.eventId}`);
+		    const bapYesQuant = await client.get(`bap_yes_quantity_${response.eventId}`);
+		    const bapNoQuant = await client.get(`bap_no_quantity_${response.eventId}`);
                     const timeDiff = Math.abs(Date.parse(end_time.replace('T',' ').slice(0,-6)) - Date.parse(formatDate()));
-                    if(timeDiff/1000>300) {
                         if(response.order_type === 'BUY') {
                             const lc_yes = await client.get(`lc_yes_${response.eventId}`); 
-                            if(parseFloat(bapYes) <= response.entry_price-API_USED.STOP_LOSS || parseFloat(bapYes) === parseFloat(lc_yes)) {
+                            if((parseFloat(bapYes) <= response.entry_price-API_USED.STOP_LOSS || parseFloat(bapYes) >= parseFloat(lc_yes)) && bapYesQuant > 30) {
                                 headers={
                                     'AUTHORIZATION': `Bearer ${API_USED.AUTH_TOKEN}`,
                                      "appId": "in.probo.pro",
@@ -82,7 +91,7 @@ const moment = require('moment');
                                     "exit_price": parseFloat(bapYes),
                                     "exit_type": "LO",
                                     "request_type": "modify_exit",
-                                    "exit_qty": 1
+                                    "exit_qty": 0
                                 }
                                 axios.put(API_USED.CANCEL_AND_EXIT_API+`${response.orderId}`, data, {headers})
                                 .then((res) => {
@@ -94,12 +103,16 @@ const moment = require('moment');
                                     }
                                 })
                                 .catch((err) => {
-                                    console.log(err);
+				    if(err.response.data.error === 'Order already completely exited!') {
+					placingOrdersProvider.deleteActive(response.orderId);
+				    }else {
+					console.log("Error while modify exit",err);
+				    }
                                 })
                             }
                         } else {
                             const lc_no = await client.get(`lc_no_${response.eventId}`);
-                            if(parseFloat(bapNo) <= response.entry_price-API_USED.STOP_LOSS || parseFloat(bapNo) === parseFloat(lc_no)) {
+                            if((parseFloat(bapNo) <= response.entry_price-API_USED.STOP_LOSS || parseFloat(bapNo) >= parseFloat(lc_no)) && bapNoQuant > 30) {
                                 headers={
                                     'AUTHORIZATION': `Bearer ${API_USED.AUTH_TOKEN}`,
                                      "appId": "in.probo.pro",
@@ -111,7 +124,7 @@ const moment = require('moment');
                                     "exit_price": parseFloat(bapNo),
                                     "exit_type": "LO",
                                     "request_type": "modify_exit",
-                                    "exit_qty": 1
+                                    "exit_qty": 0
                                 }
                                 axios.put(API_USED.CANCEL_AND_EXIT_API+`${response.orderId}`, data, {headers})
                                 .then((res) => {
@@ -123,67 +136,14 @@ const moment = require('moment');
                                     }
                                 })
                                 .catch((err) => {
-                                    console.log(err);
+				    if(err.response.data.error === 'Order already completely exited!') {
+					placingOrdersProvider.deleteActive(response.orderId);
+				    } else {
+					console.log("Error while modify exit",err);
+				    }
                                 })
                             }
                         }
-                    } else {
-                        if(response.order_type === 'BUY') {
-                            const lc_yes = await client.get(`lc_yes_${response.eventId}`); 
-                                headers={
-                                    'AUTHORIZATION': `Bearer ${API_USED.AUTH_TOKEN}`,
-                                     "appId": "in.probo.pro",
-                                     "x-device-os": "ANDROID",
-                                     "x-version-name": "5.38.3"
-                                
-                                }
-                                const data = {
-                                    "exit_price": parseFloat(bapYes),
-                                    "exit_type": "MO",
-                                    "request_type": "modify_exit",
-                                    "exit_qty": 1
-                                }
-                                axios.put(API_USED.CANCEL_AND_EXIT_API+`${response.orderId}`, data, {headers})
-                                .then((res) => {
-					console.log(res.data);
-                                    if(res.data.statusCode === 200) {
-                                        placingOrdersProvider.updateActive(response.orderId, "MODIFY EXIT PENDING");
-                                    } else {
-                                        console.log("Error while cancelling and placing exit !!!");
-                                    }
-                                })
-                                .catch((err) => {
-                                    console.log(err);
-                                })
-                        } else {
-                            const lc_no = await client.get(`lc_no_${response.eventId}`); 
-                                headers={
-                                    'AUTHORIZATION': `Bearer ${API_USED.AUTH_TOKEN}`,
-                                     "appId": "in.probo.pro",
-                                     "x-device-os": "ANDROID",
-                                     "x-version-name": "5.38.3"
-                                
-                                }
-                                const data = {
-                                    "exit_price": parseFloat(bapNo),
-                                    "exit_type": "MO",
-                                    "request_type": "modify_exit",
-                                    "exit_qty": 1
-                                }
-                                axios.put(API_USED.CANCEL_AND_EXIT_API+`${response.orderId}`, data, {headers})
-                                .then((res) => {
-					console.log(res.data);
-                                    if(res.data.statusCode === 200) {
-                                        placingOrdersProvider.updateActive(response.orderId, "MODIFY EXIT PENDING");
-                                    } else {
-                                        console.log("Error while cancelling and placing exit !!!");
-                                    }
-                                })
-                                .catch((err) => {
-                                    console.log(err);
-                                })
-                        }
-                    }
                 })
 		const modifiedResp = await placingOrdersProvider.get("MODIFY EXIT PENDING");
 		modifiedResp.map(async(response) => {
@@ -202,7 +162,7 @@ const moment = require('moment');
 				    "exit_price": parseFloat(bapYes),
 				    "exit_type": "LO",
 				    "request_type": "modify_exit",
-				    "exit_qty": 1
+				    "exit_qty": 0
 			    }
 			    axios.put(API_USED.CANCEL_AND_EXIT_API+`${response.orderId}`, data, {headers})
 			    .then((res) => {
@@ -213,7 +173,11 @@ const moment = require('moment');
 				    console.log("Error while modifying exit");
 				}
 			    }).catch((err) => {
-				console.log(err);
+				console.log(Object.keys(err));
+				if(err.response.data.error === 'Order already completely exited!') {
+                                    placingOrdersProvider.deleteActive(response.orderId);
+                                }
+				console.log("Error while re exit", err);
 			    })
 			} else {
 			    const headers = {
@@ -226,18 +190,25 @@ const moment = require('moment');
                                     "exit_price": parseFloat(bapNo),
                                     "exit_type": "LO",
                                     "request_type": "modify_exit",
-                                    "exit_qty": 1
+                                    "exit_qty": 0
                             }
 			    axios.put(API_USED.CANCEL_AND_EXIT_API+`${response.orderId}`, data, {headers})
                             .then((res) => {
                                 console.log(res.data);
-                                if(res.data.statusCode === 200){
+				if(res.data.data.error === 'Order already completely exited!') {
+                                    placingOrdersProvider.deleteActive(response.orderId);
+                                }
+                                else if(res.data.statusCode === 200){
                                     placingOrdersProvider.updateActive(response.orderId, "MODIFY EXIT PENDING")
                                 }else {
                                     console.log("Error while modifying exit");
                                 }
                             }).catch((err) => {
-                                console.log(err);
+				console.log(Object.keys(err));
+                                if(err.response.data.error === 'Order already completely exited!') {
+                                    placingOrdersProvider.deleteActive(response.orderId);
+                                }
+                                console.log("Error while re exit",err);
                             })
 			}
 		    }

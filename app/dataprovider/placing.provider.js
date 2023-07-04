@@ -23,6 +23,14 @@ const placingOrdersProvider = {
         })
         return data;
     },
+    getOrderId: async (id) => {
+	const data = await activeOrdersPlaced.findOne({
+	    where:{
+		orderId: id
+	    }
+	})
+	return data;
+    },
 }
 
 module.exports = {placingOrdersProvider};
